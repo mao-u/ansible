@@ -1,0 +1,81 @@
+- name: install tools for adding ppa repositories
+  apt:
+    name: software-properties-common
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - development
+
+- name: install ppa:ondrej/php repo
+  apt_repository:
+    repo: 'ppa:ondrej/php'
+    state: present
+  tags:
+    - development
+
+- name: install php{{ php_version }}
+  apt: name={{ item }} state=latest update_cache=yes cache_valid_time=3600
+  with_items:
+    - php{{ php_version }}
+    - php{{ php_version }}-cli
+    - php{{ php_version }}-fpm
+    - php{{ php_version }}-dev
+    - php{{ php_version }}-gd
+    - php{{ php_version }}-imap
+    - php{{ php_version }}-mysql
+    - php{{ php_version }}-mbstring
+    - php{{ php_version }}-zip
+    - php{{ php_version }}-xml
+    - php{{ php_version }}-opcache
+    - php{{ php_version }}-common
+    - php{{ php_version }}-curl
+    - php{{ php_version }}-intl
+    - php{{ php_version }}-bcmath
+    - php-apcu
+  tags:
+    - development
+
+- name: start php-fpm
+  service:
+    name: php{{ php_version }}-fpm
+    state: started
+    enabled: yes
+  tags:
+    - development
+
+- name: exchange cli php.ini
+  template:
+    src: cli_php.ini.j2
+    dest: /etc/php/{{ php_version }}/cli/php.ini
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart php-fpm
+  tags:
+    - development
+
+- name: exchange fpm php.ini
+  template:
+    src: fpm_php.ini.j2
+    dest: /etc/php/{{ php_version }}/fpm/php.ini
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart php-fpm
+  tags:
+    - development
+
+- name: exchange apcu.ini
+  template:
+    src: apcu.ini.j2
+    dest: /etc/php/{{ php_version }}/mods-available/apcu.ini
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart php-fpm
+  tags:
+    - development

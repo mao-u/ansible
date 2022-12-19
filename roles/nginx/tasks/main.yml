@@ -1,0 +1,97 @@
+- name: uninstall apache2
+  apt:
+    name: apache2*
+    state: absent
+    purge: yes
+    force: yes
+  tags:
+    - development
+
+- name: add user nginx
+  user:
+    name: nginx
+  tags:
+    - development
+
+- name: install nginx
+  apt:
+    name: nginx
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - development
+
+- name: create access.log
+  file:
+    path: /var/log/nginx/access.log
+    state: touch
+    owner: nginx
+    group: nginx
+    mode: 0755
+  tags:
+    - development
+
+- name: start nginx
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+  tags:
+    - development
+
+- name: add blacklist config
+  template:
+    src: blacklist.conf.j2
+    dest: /etc/nginx/conf.d/blacklist.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart nginx
+    - restart php-fpm
+  tags:
+    - development
+
+- name: add error html
+  template:
+    src: error.html.j2
+    dest: /usr/share/nginx/html/error.html
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - development
+
+- name: exchange nginx config
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify:
+    - restart nginx
+    - restart php-fpm
+  tags:
+    - development
+
+- name: exchange nginx default config
+  template:
+    src: default.j2
+    dest: /etc/nginx/sites-available/default
+  notify:
+    - restart nginx
+    - restart php-fpm
+  tags:
+    - development
+
+- name: exchange www.conf
+  template:
+    src: www.conf.j2
+    dest: /etc/php/{{ php_version }}/fpm/pool.d/www.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart nginx
+    - restart php-fpm
+  tags:
+    - development

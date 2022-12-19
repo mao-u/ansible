@@ -1,0 +1,126 @@
+- name : check is setting mysql
+  stat : path=/var/tmp/mysql-setting-complete.txt
+  register: is_setting_mysql
+  tags:
+    - development
+
+- name: install mysql
+  apt:
+    name:
+      - mysql-server-8.0
+      - mysql-client-8.0
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+  when: is_setting_mysql.stat.exists == false
+  tags:
+    - development
+
+- name: Install pip
+  apt:
+    name: python3-pip
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - development
+
+- name: install pymysql
+  pip:
+    name: pymysql
+    state: present
+  tags:
+    - development
+
+- name: start mysql
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+  when: is_setting_mysql.stat.exists == false
+  tags:
+    - development
+
+- name: exchange mysql config
+  template:
+    src: my.cnf.j2
+    dest: /etc/mysql/my.cnf
+    mode: 0644
+  notify:
+    - restart mysql
+  tags:
+    - development
+
+- name: update mysql root password
+  mysql_user:
+    login_user: "{{ admin_user_name }}"
+    login_password: "{{ admin_user_password }}"
+    name: "{{ admin_user_name }}"
+    password: "{{ admin_user_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    check_implicit_admin: true
+    state: present
+  tags:
+    - development
+
+- name: delete anonymous user
+  mysql_user:
+    login_user: "{{ admin_user_name }}"
+    login_password: "{{ admin_user_password }}"
+    name: ''
+    host_all: yes
+    state: absent
+  tags:
+    - development
+
+- name: create mysql client user
+  mysql_user:
+    login_user: "{{ admin_user_name }}"
+    login_password: "{{ admin_user_password }}"
+    name: "{{ user_name }}"
+    password: "{{ user_password }}"
+    priv: '{{ db_name }}.*:ALL'
+    host: '%'
+    state: present
+  tags:
+    - development
+
+- name: set character when connecting
+  lineinfile:
+    path: /etc/mysql/conf.d/mysql.cnf
+    insertafter: '\[mysqld\]'
+    line: 'default-character-set=utf8mb4'
+  when: is_setting_mysql.stat.exists == false
+  notify:
+    - restart mysql
+  tags:
+    - development
+
+- name: set character when startup
+  lineinfile:
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+    insertafter: '\[mysqld\]'
+    line: "character-set-server=utf8mb4"
+  when: is_setting_mysql.stat.exists == false
+  notify:
+    - restart mysql
+  tags:
+    - development
+
+- name: create db
+  mysql_db:
+    login_user: "{{ admin_user_name }}"
+    login_password: "{{ admin_user_password }}"
+    name: "{{ db_name }}"
+    state: present
+    collation: utf8mb4_unicode_ci
+    encoding: utf8mb4
+  when: is_setting_mysql.stat.exists == false
+  tags:
+    - development
+
+- name : make mysql setting end notice file
+  file : path=/var/tmp/mysql-setting-complete.txt state=touch owner=root group=root mode=0600
+  when: is_setting_mysql.stat.exists == false
+  tags:
+    - development

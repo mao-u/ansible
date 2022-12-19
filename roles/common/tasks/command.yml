@@ -1,0 +1,27 @@
+- name: install vim
+  apt:
+    name: vim
+    state: latest
+  tags:
+    - development
+
+- name: install locate
+  apt:
+    name: locate
+    state: latest
+  tags:
+    - development
+
+- name: install git
+  apt:
+    name: git
+    state: latest
+  tags:
+    - development
+
+- name: install wget
+  apt:
+    name: wget
+    state: latest
+  tags:
+    - development

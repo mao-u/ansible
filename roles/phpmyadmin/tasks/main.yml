@@ -1,0 +1,51 @@
+- name: download phpMyAdmin
+  get_url:
+    url: https://files.phpmyadmin.net/phpMyAdmin/5.2.0/phpMyAdmin-5.2.0-all-languages.tar.gz
+    dest: /usr/local/src
+    validate_certs: no
+  tags:
+    - development
+
+- name: unarchive phpMyAdmin
+  unarchive:
+    src: /usr/local/src/phpMyAdmin-5.2.0-all-languages.tar.gz
+    dest: /home/vagrant/
+    owner: root
+    group: root
+    copy: no
+    creates: /home/vagrant/phpMyAdmin
+  tags:
+    - development
+
+- name: move phpMyAdmin directory
+  shell: mv /home/vagrant/phpMyAdmin-5.2.0-all-languages /home/vagrant/phpMyAdmin
+  args:
+    creates: /home/vagrant/phpMyAdmin
+  tags:
+    - development
+
+- name: exchange phpmyadmin config
+  template:
+    src: config.inc.php.j2
+    dest: /home/vagrant/phpMyAdmin/config.inc.php
+  tags:
+    - development
+
+- name: exchange nginx phpmyadmin config
+  template:
+    src: phpmyadmin.j2
+    dest: /etc/nginx/sites-available/phpmyadmin
+  notify:
+    - restart nginx
+    - restart php-fpm
+  tags:
+    - development
+
+- name: enable nginx phpmyadmin config
+  file:
+    src: /etc/nginx/sites-available/phpmyadmin
+    dest: /etc/nginx/sites-enabled/phpmyadmin
+    state: link
+  notify:
+    - restart nginx
+    - restart php-fpm

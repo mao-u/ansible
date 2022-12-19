@@ -1,0 +1,34 @@
+- name: set timezone
+  copy:
+    src: /usr/share/zoneinfo/Japan
+    dest: /etc/localtime
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - development
+
+- name: install chrony
+  apt:
+    name: chrony
+    state: latest
+  tags:
+    - development
+
+- name: change chrony.conf
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - development
+
+- name: start chrony
+  service:
+    name: chrony
+    state: restarted
+    enabled: yes
+  tags:
+    - development

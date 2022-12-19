@@ -1,0 +1,11 @@
+[vagrant-development]
+# vagrantのansible.groupsにて指定
+
+[aws-development]
+# xxx.xxx.xxx.xxx
+
+[staging]
+# xxx.xxx.xxx.xxx
+
+[production]
+# example.co.jp

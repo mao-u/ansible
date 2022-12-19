@@ -1,0 +1,9 @@
+- name : change vagrantHomeDir permission
+  file: path=/home/vagrant/ owner=vagrant group=vagrant mode=755 recurse=yes state=directory
+  tags:
+    - development
+
+- name : change testHomeDir permission
+  file: path=/home/test owner=test group=test mode=777 recurse=yes state=directory
+  tags:
+    - development

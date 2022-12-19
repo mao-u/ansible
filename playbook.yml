@@ -1,0 +1,25 @@
+- hosts: all
+  connection: local
+  become: yes
+  tasks:
+    - name: apt update
+      apt:
+        name: '*'
+        state: latest
+        cache_valid_time: 3600
+    - name: apt upgrade
+      apt:
+        upgrade: yes
+        cache_valid_time: 3600
+- hosts: vagrant-development
+  connection: local
+  become: yes
+  roles:
+    - common
+    - php
+    - nginx
+    - mysql
+    - composer
+    - chrony
+    - postfix
+    - phpmyadmin

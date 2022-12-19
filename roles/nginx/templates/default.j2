@@ -1,0 +1,104 @@
+server {
+    listen       80 default_server;
+    # listen       443 ssl http2 default_server;
+    server_name  _;
+    root         /home/vagrant/app/public/;
+    index        index.php index.html index.htm index.nginx-debian.html;
+
+    # ssl_protocols       TLSv1.1 TLSv1.2 TLSv1.3;
+    # ssl_certificate     /home/ubuntu/ssl/server.crt;
+    # ssl_certificate_key /home/ubuntu/ssl/server.key;
+
+    # Buffer
+    #
+    proxy_buffer_size       64k;
+    proxy_buffers           50 64k;
+    proxy_busy_buffers_size 128k;
+
+    fastcgi_buffer_size          64k;
+    fastcgi_buffers              4 128k;
+    fastcgi_busy_buffers_size    128k;
+    fastcgi_temp_file_write_size 128k;
+
+    # アクセスログ
+    #
+    access_log /var/log/nginx/access.log main;
+    error_log  /var/log/nginx/error.log warn;
+
+    # エラーページ
+    #
+    error_page 429 500 502 503 504 /error.html;
+    location = /error.html {
+       root /usr/share/nginx/html;
+    }
+
+    # DOS対策
+    # チェック対象のIPは$limit_objectにuri,keyを追加(画像等のアクセスを加味しないように)
+    #
+    if ($limit_object) {
+        set $limit_object $binary_remote_addr$uri$arg_xxx;
+    }
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+        limit_req zone=z_peruser burst=4 nodelay;
+
+        location /search {
+            try_files $uri $uri/ /index.php?$query_string;
+            limit_req zone=z_peruser burst=2 nodelay;
+        }
+
+        location /category {
+            try_files $uri $uri/ /index.php?$query_string;
+            limit_req zone=z_peruser burst=2 nodelay;
+        }
+    }
+
+    # ブラックリスト
+    #
+    include /etc/nginx/conf.d/blacklist.conf;
+    allow   all;
+
+    # タイムアウト
+    #
+    fastcgi_read_timeout 180;
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    location ~ /\.ht {
+        deny all;
+    }
+
+    # キャッシュ設定
+    #
+    location ~* \.(jpg|png|gif|swf|jpeg|ico|ttf)$ {
+        access_log off;
+        expires    10d;
+        add_header Pragma public;
+        add_header Cache-Control "public";
+    }
+    location ~* \.(css)$ {
+        access_log off;
+        expires    15d;
+        add_header Pragma public;
+        add_header Cache-Control "public";
+    }
+    location ~* \.(js)$ {
+        access_log off;
+        expires    30d;
+        add_header Pragma public;
+        add_header Cache-Control "public";
+    }
+
+    # fastcgi
+    #
+    location ~ \.php$ {
+        fastcgi_split_path_info  ^(.+\.php)(.+)$;
+        fastcgi_pass             unix:/run/php/php{{ php_version }}-fpm.sock;
+        fastcgi_index            index.php;
+        fastcgi_param            SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param            PATH_INFO $fastcgi_path_info;
+        include                  fastcgi_params;
+        fastcgi_intercept_errors on;
+    }
+}

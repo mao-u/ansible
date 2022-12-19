@@ -1,0 +1,4 @@
+- name: add test user
+  user: name=test password={{ user_pass | password_hash('sha512') }}
+  tags:
+    - development

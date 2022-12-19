@@ -1,0 +1,14 @@
+- name: apt update
+  apt:
+    name: '*'
+    state: latest
+    cache_valid_time: 3600
+  tags:
+    - development
+
+- name: apt upgrade
+  apt:
+    upgrade: yes
+    cache_valid_time: 3600
+  tags:
+    - development
